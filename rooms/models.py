@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Room(models.Model):
@@ -34,6 +36,7 @@ class Book(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="books", verbose_name="Постоялец",)
     date_start = models.DateTimeField(auto_now_add=True, verbose_name="Начало бронирования",)
     date_finish = models.DateTimeField(verbose_name="Конец бронирования",)
+    room = models.OneToOneField(Room, on_delete=models.CASCADE, verbose_name="Бронируемая комната")
 
     def __str__(self):
         return f"Бронь: {self.owner.username} {self.date_start} - {self.date_finish}"
@@ -42,3 +45,8 @@ class Book(models.Model):
         verbose_name = "Запись бронирования"
         verbose_name_plural = "Записи бронирования"
 
+
+@receiver(post_save, sender=Book)
+def update_room(sender, instance, **kwargs):
+    instance.room.is_booked = True
+    instance.room.save()
